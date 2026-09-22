@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tapsody — Privacy policy</title>
+<meta name="description" content="Tapsody collects no data. It reads key codes locally to play a sound, stores nothing about what you type, and has no network access.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<div class="hero">
+  <h1>Privacy policy</h1>
+  <p class="tagline">Tapsody for macOS · effective 22 September 2026</p>
+  <nav class="links">
+    <a href="./">Home</a>
+    <a href="support.html">Support</a>
+  </nav>
+</div>
+
+<section class="card">
+  <h2>The short version</h2>
+  <p>Tapsody collects nothing. No personal data, no usage data, no diagnostics. Nothing you type is stored, and nothing leaves your Mac, because the app has no network access at all.</p>
+</section>
+
+<section class="card">
+  <h2>Why the app asks to monitor input</h2>
+  <p>Tapsody plays a keyboard click for each keystroke, so it has to know when a key is pressed and released. macOS gates that behind the <strong>Input Monitoring</strong> permission, which you grant in System Settings and can revoke at any time.</p>
+  <p>With that permission the app observes three kinds of keyboard event: key down, key up, and modifier changes. From each event it reads only:</p>
+  <ul>
+    <li>the <strong>key code</strong>, a number identifying which physical key it was, used to pick a sound and decide whether it plays from the left or the right;</li>
+    <li>whether the key went <strong>down or up</strong>;</li>
+    <li>whether the event was a <strong>key repeat</strong>.</li>
+  </ul>
+  <p>That information is used immediately to start a sound and is then discarded. It is never written to disk, never assembled into text, and never transmitted. The app cannot and does not reconstruct what you typed.</p>
+  <p>Tapsody only listens. It never modifies, blocks or injects keyboard events.</p>
+  <p>Separately, macOS withholds <strong>secure input</strong> from apps like this one. Anything typed into a password field is not delivered to Tapsody by the system at all.</p>
+</section>
+
+<section class="card">
+  <h2>What is stored on your Mac</h2>
+  <p>Tapsody keeps its own settings in the standard macOS preferences for the app, inside its sandbox container. That is:</p>
+  <ul>
+    <li>your chosen sound, volume, tone adjustments and the other switches in Settings;</li>
+    <li>the bundle identifiers of any apps you asked it to stay silent in;</li>
+    <li>a <strong>count of keystrokes per day</strong>, which is what the statistics in the panel show. It is a number per date and nothing else: no key codes, no times, no text. Recent days are kept and older ones are discarded.</li>
+  </ul>
+  <p>All of this stays on your Mac. You can clear the counts with <strong>Reset Statistics</strong> in Settings, and removing the app removes everything it stored.</p>
+</section>
+
+<section class="card">
+  <h2>What the app does not do</h2>
+  <ul>
+    <li>No network connections, no servers, no cloud sync. The app contains no networking code.</li>
+    <li>No analytics, telemetry, crash reporting or advertising, and no third-party software development kits.</li>
+    <li>No accounts, sign-in or identifiers, and no tracking across apps or websites.</li>
+    <li>No microphone, camera, contacts, calendar, photos or location access.</li>
+    <li>No selling or sharing of data, because there is none to sell or share.</li>
+  </ul>
+  <p>Tapsody runs in Apple's App Sandbox. Besides Input Monitoring, the only capability it requests is read-only access to files you pick yourself, used by the file dialog when you choose an app to stay silent in.</p>
+</section>
+
+<section class="card">
+  <h2>Purchases and children</h2>
+  <p>If you bought Tapsody, the purchase was handled by Apple. The developer receives Apple's own sales reports, which are aggregated and contain no information about individuals. The app itself has no in-app purchases.</p>
+  <p>Tapsody is rated suitable for all ages and collects no data from anyone, including children.</p>
+</section>
+
+<section class="card">
+  <h2>Changes and contact</h2>
+  <p>If this policy changes, the updated version will be published on this page with a new effective date. Material changes will also be noted in the app's release notes.</p>
+  <p>Questions about privacy can be raised as a <a href="https://github.com/azun-k2/tapsody/issues">GitHub issue</a> on this site's repository.</p>
+</section>
+
+<footer>
+<p>Tapsody for macOS · <a href="./">Home</a> · <a href="support.html">Support</a> · <a href="privacy.html">Privacy</a> · <a href="https://github.com/azun-k2/tapsody/issues">Report an issue</a></p>
+</footer>
+</main>
+</body>
+</html>

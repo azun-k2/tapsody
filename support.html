@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tapsody — Support</title>
+<meta name="description" content="How to set up Tapsody, and what to do when it makes no sound.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<div class="hero">
+  <h1>Support</h1>
+  <p class="tagline">Setting up Tapsody, and fixing the few things that can go wrong.</p>
+  <nav class="links">
+    <a href="./">Home</a>
+    <a href="privacy.html">Privacy policy</a>
+    <a href="https://github.com/azun-k2/tapsody/issues">Report an issue</a>
+  </nav>
+</div>
+
+<section class="card">
+  <h2>First launch</h2>
+  <p>Tapsody has no Dock icon. It appears in the menu bar as a keyboard symbol; click it to open the panel.</p>
+  <p>Before it can make a sound, macOS has to let it see key presses:</p>
+  <ul>
+    <li>Click <strong>Open System Settings…</strong> on the orange card in the panel.</li>
+    <li>Switch <strong>Tapsody</strong> on under <strong>Privacy &amp; Security &rsaquo; Input Monitoring</strong>.</li>
+    <li>Start typing. Sounds begin within a couple of seconds; there is no need to relaunch.</li>
+  </ul>
+</section>
+
+<section class="card">
+  <h2>Troubleshooting</h2>
+
+  <h3>No sound at all</h3>
+  <ul>
+    <li>Check the switch at the top right of the panel is on, and that the volume slider is not at zero.</li>
+    <li>If the panel says <em>Sleeping</em>, click <strong>Wake</strong>.</li>
+    <li>Check Input Monitoring, as above.</li>
+  </ul>
+
+  <h3>Input Monitoring looks switched on, but the panel still says it is waiting</h3>
+  <p>macOS ties the permission to the app's code signature, and a stale entry from an older copy can be listed as allowed while the current app is still denied. Reset just this app's entry, then switch it on again:</p>
+  <pre><code>tccutil reset ListenEvent azun.keytone.app</code></pre>
+  <p class="note">That identifier is Tapsody's bundle ID; it kept an earlier name for the app.</p>
+
+  <h3>Sound is missing in one app only</h3>
+  <p>That app may be in the muted list. Open <strong>Settings &rsaquo; Muted apps</strong> and remove it. Games and remote desktop apps are common entries.</p>
+
+  <h3>It sounds wrong for the keyboard I have</h3>
+  <p>The presets imitate particular switches and boards rather than your keyboard. Try the other collection, then use <strong>Tune</strong> to adjust brightness, body, pitch and decay.</p>
+
+  <h3>Typing feels delayed</h3>
+  <p>Tapsody never intercepts keystrokes; it only listens, so it cannot slow typing down. If the sound lags behind your typing, check whether another audio app is holding the output device.</p>
+</section>
+
+<section class="card">
+  <h2>Getting in touch</h2>
+  <p>Bugs and requests are welcome as <a href="https://github.com/azun-k2/tapsody/issues">GitHub issues</a>. Useful things to include: your macOS version, whether your Mac is Apple silicon or Intel, which sound was selected, and what you expected to hear.</p>
+</section>
+<footer>
+<p>Tapsody for macOS · <a href="./">Home</a> · <a href="support.html">Support</a> · <a href="privacy.html">Privacy</a> · <a href="https://github.com/azun-k2/tapsody/issues">Report an issue</a></p>
+</footer>
+</main>
+</body>
+</html>
