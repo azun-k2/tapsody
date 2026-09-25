@@ -27,18 +27,13 @@ body {
 }
 main { max-width: 720px; margin: 0 auto; }
 .hero { text-align: center; margin-bottom: 40px; }
+/* The app icon itself. Its artwork keeps Apple's transparent margin round
+   the squircle, so it is shown a little larger than the squircle should
+   appear, and the shadow follows the squircle, not the square. */
 .icon {
-  width: 96px; height: 96px; margin: 0 auto 18px;
-  border-radius: 24px;
-  background: linear-gradient(180deg, #fbfbff 0%, #ccd3fd 100%);
-  display: grid; place-items: center;
-  box-shadow: 0 10px 30px rgba(60, 50, 140, 0.18);
-}
-.icon span {
-  display: grid; place-items: center;
-  width: 58px; height: 54px; border-radius: 15px;
-  background: linear-gradient(180deg, #8e86ff 0%, #5a4bdd 100%);
-  color: #fff; font-size: 30px; line-height: 1;
+  display: block;
+  width: 120px; height: 120px; margin: -6px auto 6px;
+  filter: drop-shadow(0 10px 24px rgba(60, 40, 150, 0.18));
 }
 h1 { font-size: 34px; margin: 0 0 6px; letter-spacing: -0.4px; }
 .tagline { color: var(--muted); margin: 0; font-size: 18px; }
