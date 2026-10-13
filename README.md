@@ -14,4 +14,4 @@ The site is served by GitHub Pages at <https://azun-k2.github.io/tapsody/>:
 The last two are the support and privacy policy URLs given to App Store
 Connect, so their paths should stay put.
 
-Support is by email: <khangazun@gmail.com>.
+Support is by email: <support@khangazun.com>.
