@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ 实时物理声学合成 · 无需音频录音文件</div>
   <img class="icon" src="../icon-512.png" width="120" height="120" alt="">
   <h1>Tapsody</h1>
   <p class="tagline">为你的 Mac 带来机械键盘音，就在菜单栏里。</p>
@@ -105,6 +106,94 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tapsody-stage" role="group" aria-label="交互式演示：敲击按键试听机械键盘音效">
+    <div class="tapsody-switches">
+      <button class="app-chip active" data-sw="blue">🔵 青轴 清脆段落</button>
+      <button class="app-chip" data-sw="brown">🟤 茶轴 微弱段落</button>
+      <button class="app-chip" data-sw="red">🔴 红轴 顺滑线性</button>
+      <button class="app-chip" data-sw="thock">🪵 客制化沉稳闷轴</button>
+    </div>
+    <div class="tapsody-board">
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="Q">Q</div>
+        <div class="tapsody-key" data-k="W">W</div>
+        <div class="tapsody-key" data-k="E">E</div>
+        <div class="tapsody-key" data-k="R">R</div>
+        <div class="tapsody-key" data-k="T">T</div>
+        <div class="tapsody-key" data-k="Y">Y</div>
+        <div class="tapsody-key" data-k="U">U</div>
+        <div class="tapsody-key" data-k="I">I</div>
+        <div class="tapsody-key" data-k="O">O</div>
+        <div class="tapsody-key" data-k="P">P</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="A">A</div>
+        <div class="tapsody-key" data-k="S">S</div>
+        <div class="tapsody-key" data-k="D">D</div>
+        <div class="tapsody-key" data-k="F">F</div>
+        <div class="tapsody-key" data-k="G">G</div>
+        <div class="tapsody-key" data-k="H">H</div>
+        <div class="tapsody-key" data-k="J">J</div>
+        <div class="tapsody-key" data-k="K">K</div>
+        <div class="tapsody-key" data-k="L">L</div>
+        <div class="tapsody-key wide-enter" data-k="ENTER">⏎ Enter</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key wide-space" data-k="SPACE">␣ 空格键（厚重腔体共鸣）</div>
+      </div>
+    </div>
+    <span class="demo-hint">💡 点击上方键帽或直接在电脑物理键盘上敲击试听</span>
+  </div>
+  <p class="demo-note">通过浏览器 Web Audio 实时声学合成。Mac 应用中每次击键均由菜单栏瞬间触发。</p>
+</div>
+<script>
+(function () {
+  var ctx = null, curSw = 'blue';
+  function initA() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); }
+  function snd(k) {
+    initA(); if (!ctx) return;
+    var t0 = ctx.currentTime, isSp = k === 'SPACE', isEnt = k === 'ENTER';
+    var f1 = 2800, f2 = 800, dec = 0.035, gVal = 0.25;
+    if (curSw === 'blue') { f1 = 3400; f2 = 1200; dec = 0.035; gVal = 0.3; }
+    else if (curSw === 'brown') { f1 = 1800; f2 = 650; dec = 0.05; gVal = 0.22; }
+    else if (curSw === 'red') { f1 = 1100; f2 = 450; dec = 0.06; gVal = 0.18; }
+    else if (curSw === 'thock') { f1 = 600; f2 = 240; dec = 0.09; gVal = 0.38; }
+    if (isSp) { f1 *= 0.6; f2 *= 0.5; dec *= 1.4; gVal *= 1.2; }
+    if (isEnt) { f1 *= 0.75; f2 *= 0.7; dec *= 1.2; }
+    var osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = curSw === 'thock' ? 'sine' : 'triangle';
+    osc.frequency.setValueAtTime(f1, t0);
+    osc.frequency.exponentialRampToValueAtTime(f2, t0 + dec);
+    g.gain.setValueAtTime(gVal, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + dec);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t0); osc.stop(t0 + dec);
+  }
+  document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); curSw = b.dataset.sw; snd('SPACE');
+    });
+  });
+  document.querySelectorAll('.tapsody-key').forEach(function(k) {
+    k.addEventListener('mousedown', function() {
+      k.classList.add('pressed'); snd(k.dataset.k);
+      setTimeout(function() { k.classList.remove('pressed'); }, 100);
+    });
+  });
+  window.addEventListener('keydown', function(e) {
+    var char = e.key.toUpperCase();
+    var el = document.querySelector('.tapsody-key[data-k="' + char + '"]') ||
+             (e.code === 'Space' && document.querySelector('.tapsody-key[data-k="SPACE"]')) ||
+             (e.code === 'Enter' && document.querySelector('.tapsody-key[data-k="ENTER"]'));
+    if (el) {
+      el.classList.add('pressed'); snd(el.dataset.k);
+      setTimeout(function() { el.classList.remove('pressed'); }, 100);
+    }
+  });
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="../img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -119,6 +208,48 @@
   <p class="note">需要 macOS 14 Sonoma 或更高版本。支持 34 种语言。</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>录音采样软件与 Tapsody 的对比</h2>
+  <p class="section-lead">为什么基于物理公式的实时声学算法能带来如同真键盘般的自然敲击感。</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>特性</th>
+          <th>录音采样工具</th>
+          <th class="highlight-col">Tapsody</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>延迟</strong></td>
+          <td>音频缓冲导致的明显击键延迟感</td>
+          <td class="highlight-col"><strong>按键下压瞬间 0 毫秒即时声学响应</strong></td>
+        </tr>
+        <tr>
+          <td><strong>体积</strong></td>
+          <td>占用数百兆空间的庞大 WAV 录音包</td>
+          <td class="highlight-col"><strong>无任何音频文件：纯物理 DSP 代码极为轻巧</strong></td>
+        </tr>
+        <tr>
+          <td><strong>听感</strong></td>
+          <td>机械重复单一音频循环，久听容易疲劳</td>
+          <td class="highlight-col"><strong>左右声道立体声声像、真实键程与大键卫星轴共鸣</strong></td>
+        </tr>
+        <tr>
+          <td><strong>智能静音</strong></td>
+          <td>视频会议和通话时噪音持续干扰</td>
+          <td class="highlight-col"><strong>在指定应用和视频会议期间自动休眠静音</strong></td>
+        </tr>
+        <tr>
+          <td><strong>隐私安全</strong></td>
+          <td>带有网络连接与按键记录隐患的第三方工具</td>
+          <td class="highlight-col"><strong>完全不联网，且 macOS 系统会自动屏蔽密码输入框</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>一段话说清隐私</h2>
   <p>Tapsody 需要“输入监控”权限，才能知道按键何时按下、何时弹起。它只读取按键代码，别的一概不读。不保存任何文本，不向任何地方发送任何内容，没有账户，也没有网络访问；在密码栏中输入的内容，macOS 本身就不会交给它。完整的<a href="privacy.html">隐私政策</a>对此有更详细的说明。</p>

@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ Real-time mathematical click synthesis · Zero audio recordings</div>
   <img class="icon" src="../icon-512.png" width="120" height="120" alt="">
   <h1>Tapsody</h1>
   <p class="tagline">Zvuky mechanické klávesnice pro váš Mac, z řádku nabídek.</p>
@@ -105,6 +106,94 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tapsody-stage" role="group" aria-label="Interaktivní ukázka: pište na klávesnici pro poslech zvuku">
+    <div class="tapsody-switches">
+      <button class="app-chip active" data-sw="blue">🔵 Modrý Klikací</button>
+      <button class="app-chip" data-sw="brown">🟤 Hnědý Taktilní</button>
+      <button class="app-chip" data-sw="red">🔴 Červený Lineární</button>
+      <button class="app-chip" data-sw="thock">🪵 Hluboký Thock</button>
+    </div>
+    <div class="tapsody-board">
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="Q">Q</div>
+        <div class="tapsody-key" data-k="W">W</div>
+        <div class="tapsody-key" data-k="E">E</div>
+        <div class="tapsody-key" data-k="R">R</div>
+        <div class="tapsody-key" data-k="T">T</div>
+        <div class="tapsody-key" data-k="Y">Y</div>
+        <div class="tapsody-key" data-k="U">U</div>
+        <div class="tapsody-key" data-k="I">I</div>
+        <div class="tapsody-key" data-k="O">O</div>
+        <div class="tapsody-key" data-k="P">P</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="A">A</div>
+        <div class="tapsody-key" data-k="S">S</div>
+        <div class="tapsody-key" data-k="D">D</div>
+        <div class="tapsody-key" data-k="F">F</div>
+        <div class="tapsody-key" data-k="G">G</div>
+        <div class="tapsody-key" data-k="H">H</div>
+        <div class="tapsody-key" data-k="J">J</div>
+        <div class="tapsody-key" data-k="K">K</div>
+        <div class="tapsody-key" data-k="L">L</div>
+        <div class="tapsody-key wide-enter" data-k="ENTER">⏎ Enter</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key wide-space" data-k="SPACE">␣ Mezerník (Hluboká rezonance těla)</div>
+      </div>
+    </div>
+    <span class="demo-hint">💡 Klikněte na klávesy nebo pište na své fyzické klávesnici</span>
+  </div>
+  <p class="demo-note">Zvuk je syntetizován přes Web Audio. V aplikaci pro Mac reaguje každý stisk okamžitě z řádku nabídek.</p>
+</div>
+<script>
+(function () {
+  var ctx = null, curSw = 'blue';
+  function initA() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); }
+  function snd(k) {
+    initA(); if (!ctx) return;
+    var t0 = ctx.currentTime, isSp = k === 'SPACE', isEnt = k === 'ENTER';
+    var f1 = 2800, f2 = 800, dec = 0.035, gVal = 0.25;
+    if (curSw === 'blue') { f1 = 3400; f2 = 1200; dec = 0.035; gVal = 0.3; }
+    else if (curSw === 'brown') { f1 = 1800; f2 = 650; dec = 0.05; gVal = 0.22; }
+    else if (curSw === 'red') { f1 = 1100; f2 = 450; dec = 0.06; gVal = 0.18; }
+    else if (curSw === 'thock') { f1 = 600; f2 = 240; dec = 0.09; gVal = 0.38; }
+    if (isSp) { f1 *= 0.6; f2 *= 0.5; dec *= 1.4; gVal *= 1.2; }
+    if (isEnt) { f1 *= 0.75; f2 *= 0.7; dec *= 1.2; }
+    var osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = curSw === 'thock' ? 'sine' : 'triangle';
+    osc.frequency.setValueAtTime(f1, t0);
+    osc.frequency.exponentialRampToValueAtTime(f2, t0 + dec);
+    g.gain.setValueAtTime(gVal, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + dec);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t0); osc.stop(t0 + dec);
+  }
+  document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); curSw = b.dataset.sw; snd('SPACE');
+    });
+  });
+  document.querySelectorAll('.tapsody-key').forEach(function(k) {
+    k.addEventListener('mousedown', function() {
+      k.classList.add('pressed'); snd(k.dataset.k);
+      setTimeout(function() { k.classList.remove('pressed'); }, 100);
+    });
+  });
+  window.addEventListener('keydown', function(e) {
+    var char = e.key.toUpperCase();
+    var el = document.querySelector('.tapsody-key[data-k="' + char + '"]') ||
+             (e.code === 'Space' && document.querySelector('.tapsody-key[data-k="SPACE"]')) ||
+             (e.code === 'Enter' && document.querySelector('.tapsody-key[data-k="ENTER"]'));
+    if (el) {
+      el.classList.add('pressed'); snd(el.dataset.k);
+      setTimeout(function() { el.classList.remove('pressed'); }, 100);
+    }
+  });
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="../img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -119,6 +208,48 @@
   <p class="note">Vyžaduje macOS 14 Sonoma nebo novější. K dispozici ve 34 jazycích.</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>Aplikace s nahrávkami zvuku vs. Tapsody</h2>
+  <p class="section-lead">Proč matematická fyzikální syntéza působí jako skutečná mechanická klávesnice.</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Vlastnost</th>
+          <th>Zvukové nahrávky</th>
+          <th class="highlight-col">Tapsody</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Zpoždění</strong></td>
+          <td>Znatelná prodleva zvuku způsobená načítáním vzorků</td>
+          <td class="highlight-col"><strong>Okamžitá odezva 0 ms přímo při stisku klávesy</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Velikost</strong></td>
+          <td>Stovky megabajtů velkých zvukových WAV souborů</td>
+          <td class="highlight-col"><strong>Žádné zvukové soubory: nepatrný kód fyzikálního DSP</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Přirozenost</strong></td>
+          <td>Umělá smyčka stále stejných zvuků unavuje uši</td>
+          <td class="highlight-col"><strong>Stereo panorama, přirozený zdvih a hluboký mezerník</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Ztišení</strong></td>
+          <td>Hlasité cvakání ruší při hovorech a poradách</td>
+          <td class="highlight-col"><strong>Automaticky se ztiší ve vybraných aplikacích</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Soukromí</strong></td>
+          <td>Nástroje třetích stran s nejasným síťovým připojením</td>
+          <td class="highlight-col"><strong>Žádná síť a macOS skryje zadávání hesel</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>Soukromí v jednom odstavci</h2>
   <p>Tapsody potřebuje oprávnění Monitorování vstupu, aby věděla, kdy se klávesa stiskne a zase uvolní. Čte kód klávesy a nic jiného. Neukládá se žádný text, nic se nikam neposílá, není tu žádný účet ani přístup k síti a samotný macOS zadržuje vše, co se píše do pole pro heslo. Úplné <a href="privacy.html">zásady ochrany soukromí</a> říkají totéž podrobněji.</p>

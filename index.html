@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ Real-time mathematical click synthesis · Zero audio recordings</div>
   <img class="icon" src="icon-512.png" width="120" height="120" alt="">
   <h1>Tapsody</h1>
   <p class="tagline">Mechanical keyboard sounds for your Mac, from the menu bar.</p>
@@ -105,6 +106,94 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tapsody-stage" role="group" aria-label="Interactive demo: type on keyboard to hear mechanical clicks">
+    <div class="tapsody-switches">
+      <button class="app-chip active" data-sw="blue">🔵 Blue Clicky</button>
+      <button class="app-chip" data-sw="brown">🟤 Brown Tactile</button>
+      <button class="app-chip" data-sw="red">🔴 Red Linear</button>
+      <button class="app-chip" data-sw="thock">🪵 Deep Custom Thock</button>
+    </div>
+    <div class="tapsody-board">
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="Q">Q</div>
+        <div class="tapsody-key" data-k="W">W</div>
+        <div class="tapsody-key" data-k="E">E</div>
+        <div class="tapsody-key" data-k="R">R</div>
+        <div class="tapsody-key" data-k="T">T</div>
+        <div class="tapsody-key" data-k="Y">Y</div>
+        <div class="tapsody-key" data-k="U">U</div>
+        <div class="tapsody-key" data-k="I">I</div>
+        <div class="tapsody-key" data-k="O">O</div>
+        <div class="tapsody-key" data-k="P">P</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="A">A</div>
+        <div class="tapsody-key" data-k="S">S</div>
+        <div class="tapsody-key" data-k="D">D</div>
+        <div class="tapsody-key" data-k="F">F</div>
+        <div class="tapsody-key" data-k="G">G</div>
+        <div class="tapsody-key" data-k="H">H</div>
+        <div class="tapsody-key" data-k="J">J</div>
+        <div class="tapsody-key" data-k="K">K</div>
+        <div class="tapsody-key" data-k="L">L</div>
+        <div class="tapsody-key wide-enter" data-k="ENTER">⏎ Enter</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key wide-space" data-k="SPACE">␣ Spacebar (Deep Resonant Body)</div>
+      </div>
+    </div>
+    <span class="demo-hint">💡 Click keys above or type on your keyboard to hear synthesized mechanical clicks</span>
+  </div>
+  <p class="demo-note">Synthesized directly via Web Audio on your device. In the Mac app, every keystroke triggers instantly from the menu bar.</p>
+</div>
+<script>
+(function () {
+  var ctx = null, curSw = 'blue';
+  function initA() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); }
+  function snd(k) {
+    initA(); if (!ctx) return;
+    var t0 = ctx.currentTime, isSp = k === 'SPACE', isEnt = k === 'ENTER';
+    var f1 = 2800, f2 = 800, dec = 0.035, gVal = 0.25;
+    if (curSw === 'blue') { f1 = 3400; f2 = 1200; dec = 0.035; gVal = 0.3; }
+    else if (curSw === 'brown') { f1 = 1800; f2 = 650; dec = 0.05; gVal = 0.22; }
+    else if (curSw === 'red') { f1 = 1100; f2 = 450; dec = 0.06; gVal = 0.18; }
+    else if (curSw === 'thock') { f1 = 600; f2 = 240; dec = 0.09; gVal = 0.38; }
+    if (isSp) { f1 *= 0.6; f2 *= 0.5; dec *= 1.4; gVal *= 1.2; }
+    if (isEnt) { f1 *= 0.75; f2 *= 0.7; dec *= 1.2; }
+    var osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = curSw === 'thock' ? 'sine' : 'triangle';
+    osc.frequency.setValueAtTime(f1, t0);
+    osc.frequency.exponentialRampToValueAtTime(f2, t0 + dec);
+    g.gain.setValueAtTime(gVal, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + dec);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t0); osc.stop(t0 + dec);
+  }
+  document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); curSw = b.dataset.sw; snd('SPACE');
+    });
+  });
+  document.querySelectorAll('.tapsody-key').forEach(function(k) {
+    k.addEventListener('mousedown', function() {
+      k.classList.add('pressed'); snd(k.dataset.k);
+      setTimeout(function() { k.classList.remove('pressed'); }, 100);
+    });
+  });
+  window.addEventListener('keydown', function(e) {
+    var char = e.key.toUpperCase();
+    var el = document.querySelector('.tapsody-key[data-k="' + char + '"]') ||
+             (e.code === 'Space' && document.querySelector('.tapsody-key[data-k="SPACE"]')) ||
+             (e.code === 'Enter' && document.querySelector('.tapsody-key[data-k="ENTER"]'));
+    if (el) {
+      el.classList.add('pressed'); snd(el.dataset.k);
+      setTimeout(function() { el.classList.remove('pressed'); }, 100);
+    }
+  });
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -119,6 +208,48 @@
   <p class="note">Requires macOS 14 Sonoma or later. Available in thirty-four languages.</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>Sample recording apps vs Tapsody</h2>
+  <p class="section-lead">Why mathematical physical synthesis feels like a real mechanical keyboard under your fingers.</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Aspect</th>
+          <th>Sample Packs</th>
+          <th class="highlight-col">Tapsody</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Latency</strong></td>
+          <td>Audio buffer lag and noticeable click delay</td>
+          <td class="highlight-col"><strong>Instant 0 ms reaction directly synthesized on keydown</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Footprint</strong></td>
+          <td>Hundreds of megabytes of recorded WAV audio files</td>
+          <td class="highlight-col"><strong>Zero audio files: tiny physical DSP code footprint</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Acoustics</strong></td>
+          <td>Identical repetitive clicks that sound like an artificial loop</td>
+          <td class="highlight-col"><strong>Stereo panning, natural key travel, and deep spacebar acoustics</strong></td>
+        </tr>
+        <tr>
+          <td><strong>App Muting</strong></td>
+          <td>Clicks noisily over meetings and screen sharing</td>
+          <td class="highlight-col"><strong>Automatically sleeps on chosen apps and video calls</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Privacy</strong></td>
+          <td>Third-party tools with unknown telemetry and network connections</td>
+          <td class="highlight-col"><strong>Zero network, no tracking, and macOS withholds password inputs</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>Privacy in one paragraph</h2>
   <p>Tapsody needs the Input Monitoring permission to know when a key goes down and comes back up. It reads the key code and nothing else. No text is stored, nothing is sent anywhere, there is no account and no network access, and macOS itself withholds anything typed into a password field. The full <a href="privacy.html">privacy policy</a> says the same thing at greater length.</p>

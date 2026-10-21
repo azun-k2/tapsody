@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ Real-time mathematical click synthesis · Zero audio recordings</div>
   <img class="icon" src="../icon-512.png" width="120" height="120" alt="">
   <h1>Tapsody</h1>
   <p class="tagline">Dźwięki mechanicznej klawiatury na Twoim Macu, z paska menu.</p>
@@ -105,6 +106,94 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tapsody-stage" role="group" aria-label="Interaktywne demo: pisz na klawiaturze, aby usłyszeć dźwięk">
+    <div class="tapsody-switches">
+      <button class="app-chip active" data-sw="blue">🔵 Blue Klikający</button>
+      <button class="app-chip" data-sw="brown">🟤 Brown Dotykowy</button>
+      <button class="app-chip" data-sw="red">🔴 Red Liniowy</button>
+      <button class="app-chip" data-sw="thock">🪵 Głęboki Thock</button>
+    </div>
+    <div class="tapsody-board">
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="Q">Q</div>
+        <div class="tapsody-key" data-k="W">W</div>
+        <div class="tapsody-key" data-k="E">E</div>
+        <div class="tapsody-key" data-k="R">R</div>
+        <div class="tapsody-key" data-k="T">T</div>
+        <div class="tapsody-key" data-k="Y">Y</div>
+        <div class="tapsody-key" data-k="U">U</div>
+        <div class="tapsody-key" data-k="I">I</div>
+        <div class="tapsody-key" data-k="O">O</div>
+        <div class="tapsody-key" data-k="P">P</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="A">A</div>
+        <div class="tapsody-key" data-k="S">S</div>
+        <div class="tapsody-key" data-k="D">D</div>
+        <div class="tapsody-key" data-k="F">F</div>
+        <div class="tapsody-key" data-k="G">G</div>
+        <div class="tapsody-key" data-k="H">H</div>
+        <div class="tapsody-key" data-k="J">J</div>
+        <div class="tapsody-key" data-k="K">K</div>
+        <div class="tapsody-key" data-k="L">L</div>
+        <div class="tapsody-key wide-enter" data-k="ENTER">⏎ Enter</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key wide-space" data-k="SPACE">␣ Spacja (Głęboki rezonans obudowy)</div>
+      </div>
+    </div>
+    <span class="demo-hint">💡 Kliknij klawisze powyżej lub pisz na fizycznej klawiaturze</span>
+  </div>
+  <p class="demo-note">Syntezowane bezpośrednio przez Web Audio. W aplikacji na Maca każde naciśnięcie klawisza reaguje natychmiast z paska menu.</p>
+</div>
+<script>
+(function () {
+  var ctx = null, curSw = 'blue';
+  function initA() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); }
+  function snd(k) {
+    initA(); if (!ctx) return;
+    var t0 = ctx.currentTime, isSp = k === 'SPACE', isEnt = k === 'ENTER';
+    var f1 = 2800, f2 = 800, dec = 0.035, gVal = 0.25;
+    if (curSw === 'blue') { f1 = 3400; f2 = 1200; dec = 0.035; gVal = 0.3; }
+    else if (curSw === 'brown') { f1 = 1800; f2 = 650; dec = 0.05; gVal = 0.22; }
+    else if (curSw === 'red') { f1 = 1100; f2 = 450; dec = 0.06; gVal = 0.18; }
+    else if (curSw === 'thock') { f1 = 600; f2 = 240; dec = 0.09; gVal = 0.38; }
+    if (isSp) { f1 *= 0.6; f2 *= 0.5; dec *= 1.4; gVal *= 1.2; }
+    if (isEnt) { f1 *= 0.75; f2 *= 0.7; dec *= 1.2; }
+    var osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = curSw === 'thock' ? 'sine' : 'triangle';
+    osc.frequency.setValueAtTime(f1, t0);
+    osc.frequency.exponentialRampToValueAtTime(f2, t0 + dec);
+    g.gain.setValueAtTime(gVal, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + dec);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t0); osc.stop(t0 + dec);
+  }
+  document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); curSw = b.dataset.sw; snd('SPACE');
+    });
+  });
+  document.querySelectorAll('.tapsody-key').forEach(function(k) {
+    k.addEventListener('mousedown', function() {
+      k.classList.add('pressed'); snd(k.dataset.k);
+      setTimeout(function() { k.classList.remove('pressed'); }, 100);
+    });
+  });
+  window.addEventListener('keydown', function(e) {
+    var char = e.key.toUpperCase();
+    var el = document.querySelector('.tapsody-key[data-k="' + char + '"]') ||
+             (e.code === 'Space' && document.querySelector('.tapsody-key[data-k="SPACE"]')) ||
+             (e.code === 'Enter' && document.querySelector('.tapsody-key[data-k="ENTER"]'));
+    if (el) {
+      el.classList.add('pressed'); snd(el.dataset.k);
+      setTimeout(function() { el.classList.remove('pressed'); }, 100);
+    }
+  });
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="../img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -119,6 +208,48 @@
   <p class="note">Wymaga macOS 14 Sonoma lub nowszego. Dostępna w 34 językach.</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>Aplikacje z nagraniami dźwięku a Tapsody</h2>
+  <p class="section-lead">Dlaczego matematyczna synteza fizyczna brzmi jak prawdziwa klawiatura mechaniczna pod palcami.</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Cecha</th>
+          <th>Próbki audio</th>
+          <th class="highlight-col">Tapsody</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Opóźnienie</strong></td>
+          <td>Zauważalne opóźnienie bufora przy odtwarzaniu plików</td>
+          <td class="highlight-col"><strong>Natychmiastowa reakcja 0 ms w momencie naciśnięcia klawisza</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Rozmiar</strong></td>
+          <td>Setki megabajtów ciężkich plików dźwiękowych WAV</td>
+          <td class="highlight-col"><strong>Zero plików audio: ultralekki matematyczny kod DSP</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Naturalność</strong></td>
+          <td>Monotonne powtórzenia brzmiące jak sztuczna pętla</td>
+          <td class="highlight-col"><strong>Przestrzenne stereo i bogata akustyka spacji</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Wyciszanie</strong></td>
+          <td>Hałasuje podczas wideokonferencji i połączeń</td>
+          <td class="highlight-col"><strong>Automatycznie wycisza się w wybranych aplikacjach</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Prywatność</strong></td>
+          <td>Narzędzia innych firm z niejasną aktywnością sieciową</td>
+          <td class="highlight-col"><strong>Brak dostępu do sieci, a macOS blokuje pola haseł</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>Prywatność w jednym akapicie</h2>
   <p>Tapsody potrzebuje uprawnienia Monitorowanie wprowadzania danych, aby wiedzieć, kiedy klawisz zostaje wciśnięty i zwolniony. Odczytuje kod klawisza i nic więcej. Żaden tekst nie jest zapisywany, nic nie jest nigdzie wysyłane, nie ma konta ani dostępu do sieci, a samo macOS ukrywa wszystko, co wpisujesz w pole hasła. Pełna <a href="privacy.html">polityka prywatności</a> mówi to samo, tylko obszerniej.</p>

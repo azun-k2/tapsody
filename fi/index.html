@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ Real-time mathematical click synthesis · Zero audio recordings</div>
   <img class="icon" src="../icon-512.png" width="120" height="120" alt="">
   <h1>Tapsody</h1>
   <p class="tagline">Mekaanisen näppäimistön ääniä Macillesi, valikkoriviltä.</p>
@@ -105,6 +106,94 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tapsody-stage" role="group" aria-label="Interaktiivinen demo: kuuntele mekaanisen näppäimistön ääniä">
+    <div class="tapsody-switches">
+      <button class="app-chip active" data-sw="blue">🔵 Sininen Klikkaava</button>
+      <button class="app-chip" data-sw="brown">🟤 Ruskea Tunteva</button>
+      <button class="app-chip" data-sw="red">🔴 Punainen Lineaarinen</button>
+      <button class="app-chip" data-sw="thock">🪵 Syvä Thock</button>
+    </div>
+    <div class="tapsody-board">
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="Q">Q</div>
+        <div class="tapsody-key" data-k="W">W</div>
+        <div class="tapsody-key" data-k="E">E</div>
+        <div class="tapsody-key" data-k="R">R</div>
+        <div class="tapsody-key" data-k="T">T</div>
+        <div class="tapsody-key" data-k="Y">Y</div>
+        <div class="tapsody-key" data-k="U">U</div>
+        <div class="tapsody-key" data-k="I">I</div>
+        <div class="tapsody-key" data-k="O">O</div>
+        <div class="tapsody-key" data-k="P">P</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="A">A</div>
+        <div class="tapsody-key" data-k="S">S</div>
+        <div class="tapsody-key" data-k="D">D</div>
+        <div class="tapsody-key" data-k="F">F</div>
+        <div class="tapsody-key" data-k="G">G</div>
+        <div class="tapsody-key" data-k="H">H</div>
+        <div class="tapsody-key" data-k="J">J</div>
+        <div class="tapsody-key" data-k="K">K</div>
+        <div class="tapsody-key" data-k="L">L</div>
+        <div class="tapsody-key wide-enter" data-k="ENTER">⏎ Enter</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key wide-space" data-k="SPACE">␣ Välilyönti (Syvä rungon resonanssi)</div>
+      </div>
+    </div>
+    <span class="demo-hint">💡 Napsauta näppäimiä tai kirjoita fyysisellä näppäimistölläsi</span>
+  </div>
+  <p class="demo-note">Syntetisoitu reaaliajassa Web Audion avulla. Mac-sovelluksessa jokainen painallus reagoi välittömästi valikkoriviltä.</p>
+</div>
+<script>
+(function () {
+  var ctx = null, curSw = 'blue';
+  function initA() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); }
+  function snd(k) {
+    initA(); if (!ctx) return;
+    var t0 = ctx.currentTime, isSp = k === 'SPACE', isEnt = k === 'ENTER';
+    var f1 = 2800, f2 = 800, dec = 0.035, gVal = 0.25;
+    if (curSw === 'blue') { f1 = 3400; f2 = 1200; dec = 0.035; gVal = 0.3; }
+    else if (curSw === 'brown') { f1 = 1800; f2 = 650; dec = 0.05; gVal = 0.22; }
+    else if (curSw === 'red') { f1 = 1100; f2 = 450; dec = 0.06; gVal = 0.18; }
+    else if (curSw === 'thock') { f1 = 600; f2 = 240; dec = 0.09; gVal = 0.38; }
+    if (isSp) { f1 *= 0.6; f2 *= 0.5; dec *= 1.4; gVal *= 1.2; }
+    if (isEnt) { f1 *= 0.75; f2 *= 0.7; dec *= 1.2; }
+    var osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = curSw === 'thock' ? 'sine' : 'triangle';
+    osc.frequency.setValueAtTime(f1, t0);
+    osc.frequency.exponentialRampToValueAtTime(f2, t0 + dec);
+    g.gain.setValueAtTime(gVal, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + dec);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t0); osc.stop(t0 + dec);
+  }
+  document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); curSw = b.dataset.sw; snd('SPACE');
+    });
+  });
+  document.querySelectorAll('.tapsody-key').forEach(function(k) {
+    k.addEventListener('mousedown', function() {
+      k.classList.add('pressed'); snd(k.dataset.k);
+      setTimeout(function() { k.classList.remove('pressed'); }, 100);
+    });
+  });
+  window.addEventListener('keydown', function(e) {
+    var char = e.key.toUpperCase();
+    var el = document.querySelector('.tapsody-key[data-k="' + char + '"]') ||
+             (e.code === 'Space' && document.querySelector('.tapsody-key[data-k="SPACE"]')) ||
+             (e.code === 'Enter' && document.querySelector('.tapsody-key[data-k="ENTER"]'));
+    if (el) {
+      el.classList.add('pressed'); snd(el.dataset.k);
+      setTimeout(function() { el.classList.remove('pressed'); }, 100);
+    }
+  });
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="../img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -119,6 +208,48 @@
   <p class="note">Vaatii macOS 14 Sonoman tai uudemman. Saatavilla 34 kielellä.</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>Äänitallennesovellukset verrattuna Tapsodyyn</h2>
+  <p class="section-lead">Miksi matemaattinen synteesi tuntuu sormissasi aidolta mekaaniselta näppäimistöltä.</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Ominaisuus</th>
+          <th>Äänitallenteet</th>
+          <th class="highlight-col">Tapsody</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Viive</strong></td>
+          <td>Havaittava puskurointiviive äänitiedostoja toistettaessa</td>
+          <td class="highlight-col"><strong>Välitön 0 ms vaste suoraan näppäimen painalluksesta</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Koko</strong></td>
+          <td>Satoja megatavuja tilaa vieviä WAV-äänitiedostoja</td>
+          <td class="highlight-col"><strong>Ei äänitiedostoja: äärimmäisen kevyt matemaattinen DSP-koodi</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Akustiikka</strong></td>
+          <td>Samat toistuvat äänet kuulostavat luonnottomalta silmukalta</td>
+          <td class="highlight-col"><strong>Stereotilavaikutelma, näppäinkohtainen liike ja välilyönnin sointi</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Vaimennus</strong></td>
+          <td>Naksuu häiritsevästi puheluiden ja kokousten aikana</td>
+          <td class="highlight-col"><strong>Mykistyy automaattisesti valituissa sovelluksissa</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Yksityisyys</strong></td>
+          <td>Kolmansien osapuolten työkalut epäselvillä verkkoyhteyksillä</td>
+          <td class="highlight-col"><strong>Ei verkkoyhteyttä ja macOS piilottaa salasanakentät</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>Tietosuoja yhdessä kappaleessa</h2>
   <p>Tapsody tarvitsee Syötteen valvonta -oikeuden tietääkseen, milloin näppäin painetaan alas ja milloin se nousee takaisin. Se lukee näppäinkoodin eikä mitään muuta. Tekstiä ei tallenneta, mitään ei lähetetä minnekään, tiliä tai verkkoyhteyttä ei ole, ja macOS itse pidättää kaiken, mitä kirjoitetaan salasanakenttään. Koko <a href="privacy.html">tietosuojakäytäntö</a> kertoo saman tarkemmin.</p>

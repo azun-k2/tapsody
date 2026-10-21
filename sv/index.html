@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ Real-time mathematical click synthesis · Zero audio recordings</div>
   <img class="icon" src="../icon-512.png" width="120" height="120" alt="">
   <h1>Tapsody</h1>
   <p class="tagline">Mekaniska tangentbordsljud för din Mac, från menyraden.</p>
@@ -105,6 +106,94 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tapsody-stage" role="group" aria-label="Interaktiv demo: skriv på tangentbordet för att höra klickljuden">
+    <div class="tapsody-switches">
+      <button class="app-chip active" data-sw="blue">🔵 Blå Klickande</button>
+      <button class="app-chip" data-sw="brown">🟤 Brun Taktil</button>
+      <button class="app-chip" data-sw="red">🔴 Röd Linjär</button>
+      <button class="app-chip" data-sw="thock">🪵 Djup Custom Thock</button>
+    </div>
+    <div class="tapsody-board">
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="Q">Q</div>
+        <div class="tapsody-key" data-k="W">W</div>
+        <div class="tapsody-key" data-k="E">E</div>
+        <div class="tapsody-key" data-k="R">R</div>
+        <div class="tapsody-key" data-k="T">T</div>
+        <div class="tapsody-key" data-k="Y">Y</div>
+        <div class="tapsody-key" data-k="U">U</div>
+        <div class="tapsody-key" data-k="I">I</div>
+        <div class="tapsody-key" data-k="O">O</div>
+        <div class="tapsody-key" data-k="P">P</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="A">A</div>
+        <div class="tapsody-key" data-k="S">S</div>
+        <div class="tapsody-key" data-k="D">D</div>
+        <div class="tapsody-key" data-k="F">F</div>
+        <div class="tapsody-key" data-k="G">G</div>
+        <div class="tapsody-key" data-k="H">H</div>
+        <div class="tapsody-key" data-k="J">J</div>
+        <div class="tapsody-key" data-k="K">K</div>
+        <div class="tapsody-key" data-k="L">L</div>
+        <div class="tapsody-key wide-enter" data-k="ENTER">⏎ Enter</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key wide-space" data-k="SPACE">␣ Mellanslag (Djup chassiresonans)</div>
+      </div>
+    </div>
+    <span class="demo-hint">💡 Klicka på tangenterna eller skriv på ditt fysiska tangentbord</span>
+  </div>
+  <p class="demo-note">Syntetiseras direkt via Web Audio. I Mac-appen reagerar varje tangenttryck omedelbart från menyraden.</p>
+</div>
+<script>
+(function () {
+  var ctx = null, curSw = 'blue';
+  function initA() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); }
+  function snd(k) {
+    initA(); if (!ctx) return;
+    var t0 = ctx.currentTime, isSp = k === 'SPACE', isEnt = k === 'ENTER';
+    var f1 = 2800, f2 = 800, dec = 0.035, gVal = 0.25;
+    if (curSw === 'blue') { f1 = 3400; f2 = 1200; dec = 0.035; gVal = 0.3; }
+    else if (curSw === 'brown') { f1 = 1800; f2 = 650; dec = 0.05; gVal = 0.22; }
+    else if (curSw === 'red') { f1 = 1100; f2 = 450; dec = 0.06; gVal = 0.18; }
+    else if (curSw === 'thock') { f1 = 600; f2 = 240; dec = 0.09; gVal = 0.38; }
+    if (isSp) { f1 *= 0.6; f2 *= 0.5; dec *= 1.4; gVal *= 1.2; }
+    if (isEnt) { f1 *= 0.75; f2 *= 0.7; dec *= 1.2; }
+    var osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = curSw === 'thock' ? 'sine' : 'triangle';
+    osc.frequency.setValueAtTime(f1, t0);
+    osc.frequency.exponentialRampToValueAtTime(f2, t0 + dec);
+    g.gain.setValueAtTime(gVal, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + dec);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t0); osc.stop(t0 + dec);
+  }
+  document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); curSw = b.dataset.sw; snd('SPACE');
+    });
+  });
+  document.querySelectorAll('.tapsody-key').forEach(function(k) {
+    k.addEventListener('mousedown', function() {
+      k.classList.add('pressed'); snd(k.dataset.k);
+      setTimeout(function() { k.classList.remove('pressed'); }, 100);
+    });
+  });
+  window.addEventListener('keydown', function(e) {
+    var char = e.key.toUpperCase();
+    var el = document.querySelector('.tapsody-key[data-k="' + char + '"]') ||
+             (e.code === 'Space' && document.querySelector('.tapsody-key[data-k="SPACE"]')) ||
+             (e.code === 'Enter' && document.querySelector('.tapsody-key[data-k="ENTER"]'));
+    if (el) {
+      el.classList.add('pressed'); snd(el.dataset.k);
+      setTimeout(function() { el.classList.remove('pressed'); }, 100);
+    }
+  });
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="../img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -119,6 +208,48 @@
   <p class="note">Kräver macOS 14 Sonoma eller senare. Finns på 34 språk.</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>Ljudinspelningsappar jämfört med Tapsody</h2>
+  <p class="section-lead">Varför matematisk fysisk syntes känns som ett äkta mekaniskt tangentbord under fingrarna.</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Aspekt</th>
+          <th>Ljudinspelningar</th>
+          <th class="highlight-col">Tapsody</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Fördröjning</strong></td>
+          <td>Märkbar buffertfördröjning vid uppspelning av ljudfiler</td>
+          <td class="highlight-col"><strong>Omedelbar 0 ms reaktion direkt vid tangentnedtryckning</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Utrymme</strong></td>
+          <td>Hundratals megabyte tunga WAV-ljudfiler</td>
+          <td class="highlight-col"><strong>Inga ljudfiler: försvinnande liten matematisk kod</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Akustik</strong></td>
+          <td>Monotona repetitioner som låter som en konstgjord slinga</td>
+          <td class="highlight-col"><strong>Stereopanorama och djup klang på mellanslagstangenten</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Tyst läge</strong></td>
+          <td>Klickar störande under samtal och möten</td>
+          <td class="highlight-col"><strong>Pausas automatiskt i valda appar och samtal</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Integritet</strong></td>
+          <td>Tredjepartsverktyg med oklar nätverksaktivitet</td>
+          <td class="highlight-col"><strong>Ingen nätverksåtkomst och macOS döljer lösenordsfält</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>Integritet i ett stycke</h2>
   <p>Tapsody behöver behörigheten Indataövervakning för att veta när en tangent trycks ned och släpps upp igen. Den läser tangentkoden och inget annat. Ingen text sparas, inget skickas någonstans, det finns inget konto och ingen nätverksåtkomst, och macOS håller själv tillbaka allt som skrivs i ett lösenordsfält. Den fullständiga <a href="privacy.html">integritetspolicyn</a> säger samma sak mer utförligt.</p>

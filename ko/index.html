@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ Real-time mathematical click synthesis · Zero audio recordings</div>
   <img class="icon" src="../icon-512.png" width="120" height="120" alt="">
   <h1>Tapsody</h1>
   <p class="tagline">Mac을 위한 기계식 키보드 소리, 메뉴 막대에서.</p>
@@ -105,6 +106,94 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tapsody-stage" role="group" aria-label="인터랙티브 데모: 키보드를 입력하여 소리를 들어보세요">
+    <div class="tapsody-switches">
+      <button class="app-chip active" data-sw="blue">🔵 청축 클릭키</button>
+      <button class="app-chip" data-sw="brown">🟤 갈축 넌클릭</button>
+      <button class="app-chip" data-sw="red">🔴 적축 리니어</button>
+      <button class="app-chip" data-sw="thock">🪵 커스텀 묵직한 조약돌</button>
+    </div>
+    <div class="tapsody-board">
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="Q">Q</div>
+        <div class="tapsody-key" data-k="W">W</div>
+        <div class="tapsody-key" data-k="E">E</div>
+        <div class="tapsody-key" data-k="R">R</div>
+        <div class="tapsody-key" data-k="T">T</div>
+        <div class="tapsody-key" data-k="Y">Y</div>
+        <div class="tapsody-key" data-k="U">U</div>
+        <div class="tapsody-key" data-k="I">I</div>
+        <div class="tapsody-key" data-k="O">O</div>
+        <div class="tapsody-key" data-k="P">P</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="A">A</div>
+        <div class="tapsody-key" data-k="S">S</div>
+        <div class="tapsody-key" data-k="D">D</div>
+        <div class="tapsody-key" data-k="F">F</div>
+        <div class="tapsody-key" data-k="G">G</div>
+        <div class="tapsody-key" data-k="H">H</div>
+        <div class="tapsody-key" data-k="J">J</div>
+        <div class="tapsody-key" data-k="K">K</div>
+        <div class="tapsody-key" data-k="L">L</div>
+        <div class="tapsody-key wide-enter" data-k="ENTER">⏎ Enter</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key wide-space" data-k="SPACE">␣ 스페이스바 (깊은 통울림 공명)</div>
+      </div>
+    </div>
+    <span class="demo-hint">💡 위의 키를 클릭하거나 실제 컴퓨터 키보드를 입력해보세요</span>
+  </div>
+  <p class="demo-note">Web Audio를 통해 실시간 합성됩니다. Mac 앱에서는 메뉴 막대에서 타이핑 즉시 지연 없이 반응합니다.</p>
+</div>
+<script>
+(function () {
+  var ctx = null, curSw = 'blue';
+  function initA() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); }
+  function snd(k) {
+    initA(); if (!ctx) return;
+    var t0 = ctx.currentTime, isSp = k === 'SPACE', isEnt = k === 'ENTER';
+    var f1 = 2800, f2 = 800, dec = 0.035, gVal = 0.25;
+    if (curSw === 'blue') { f1 = 3400; f2 = 1200; dec = 0.035; gVal = 0.3; }
+    else if (curSw === 'brown') { f1 = 1800; f2 = 650; dec = 0.05; gVal = 0.22; }
+    else if (curSw === 'red') { f1 = 1100; f2 = 450; dec = 0.06; gVal = 0.18; }
+    else if (curSw === 'thock') { f1 = 600; f2 = 240; dec = 0.09; gVal = 0.38; }
+    if (isSp) { f1 *= 0.6; f2 *= 0.5; dec *= 1.4; gVal *= 1.2; }
+    if (isEnt) { f1 *= 0.75; f2 *= 0.7; dec *= 1.2; }
+    var osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = curSw === 'thock' ? 'sine' : 'triangle';
+    osc.frequency.setValueAtTime(f1, t0);
+    osc.frequency.exponentialRampToValueAtTime(f2, t0 + dec);
+    g.gain.setValueAtTime(gVal, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + dec);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t0); osc.stop(t0 + dec);
+  }
+  document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); curSw = b.dataset.sw; snd('SPACE');
+    });
+  });
+  document.querySelectorAll('.tapsody-key').forEach(function(k) {
+    k.addEventListener('mousedown', function() {
+      k.classList.add('pressed'); snd(k.dataset.k);
+      setTimeout(function() { k.classList.remove('pressed'); }, 100);
+    });
+  });
+  window.addEventListener('keydown', function(e) {
+    var char = e.key.toUpperCase();
+    var el = document.querySelector('.tapsody-key[data-k="' + char + '"]') ||
+             (e.code === 'Space' && document.querySelector('.tapsody-key[data-k="SPACE"]')) ||
+             (e.code === 'Enter' && document.querySelector('.tapsody-key[data-k="ENTER"]'));
+    if (el) {
+      el.classList.add('pressed'); snd(el.dataset.k);
+      setTimeout(function() { el.classList.remove('pressed'); }, 100);
+    }
+  });
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="../img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -119,6 +208,48 @@
   <p class="note">macOS 14 Sonoma 이상이 필요합니다. 34개 언어를 지원합니다.</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>녹음 오디오 재생 앱과 Tapsody 비교</h2>
+  <p class="section-lead">물리 수식 기반 사운드 합성이 실제 기계식 키보드와 똑같은 손맛을 주는 이유.</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>항목</th>
+          <th>오디오 녹음 재생</th>
+          <th class="highlight-col">Tapsody</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>입력 지연</strong></td>
+          <td>오디오 버퍼 로딩으로 인한 거슬리는 클릭 지연</td>
+          <td class="highlight-col"><strong>키를 누르는 순간 즉각 반응하는 0 ms 지연율</strong></td>
+        </tr>
+        <tr>
+          <td><strong>용량</strong></td>
+          <td>수백 메가바이트에 달하는 무거운 WAV 오디오 파일</td>
+          <td class="highlight-col"><strong>오디오 파일 전무: 극도로 가벼운 수학적 물리 알고리즘</strong></td>
+        </tr>
+        <tr>
+          <td><strong>타건감</strong></td>
+          <td>단조로운 반복 루프로 금방 귀가 피로해지는 소리</td>
+          <td class="highlight-col"><strong>좌우 스테레오 입체 음향과 묵직한 스페이스바 공명</strong></td>
+        </tr>
+        <tr>
+          <td><strong>자동 음소거</strong></td>
+          <td>온라인 회의나 화상 통화 중에도 소음 발생</td>
+          <td class="highlight-col"><strong>지정한 앱이나 통화 시 자동으로 조용히 정지</strong></td>
+        </tr>
+        <tr>
+          <td><strong>개인정보 보호</strong></td>
+          <td>출처가 불분명한 외부 키로거 보안 위험</td>
+          <td class="highlight-col"><strong>네트워크 통신 일체 없음, macOS가 비밀번호 필드 보호</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>한 문단으로 보는 개인정보 보호</h2>
   <p>Tapsody는 키가 눌렸다가 다시 올라오는 순간을 알기 위해 입력 모니터링 권한이 필요합니다. 읽는 것은 키 코드뿐입니다. 텍스트는 저장되지 않고, 아무것도 어디로 전송되지 않으며, 계정도 네트워크 접근도 없습니다. 암호 입력란에 입력한 내용은 macOS가 직접 막아 줍니다. 전체 <a href="privacy.html">개인정보 처리방침</a>에서 같은 내용을 더 자세히 볼 수 있습니다.</p>

@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ Real-time mathematical click synthesis · Zero audio recordings</div>
   <img class="icon" src="../icon-512.png" width="120" height="120" alt="">
   <h1>Tapsody</h1>
   <p class="tagline">Bunyi papan kekunci mekanikal untuk Mac anda, dari bar menu.</p>
@@ -105,6 +106,94 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tapsody-stage" role="group" aria-label="Demo interaktif: taip pada papan kekunci untuk mendengar klik">
+    <div class="tapsody-switches">
+      <button class="app-chip active" data-sw="blue">🔵 Suis Blue Clicky</button>
+      <button class="app-chip" data-sw="brown">🟤 Suis Brown Taktil</button>
+      <button class="app-chip" data-sw="red">🔴 Suis Red Linear</button>
+      <button class="app-chip" data-sw="thock">🪵 Thock Tersuai Mendalam</button>
+    </div>
+    <div class="tapsody-board">
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="Q">Q</div>
+        <div class="tapsody-key" data-k="W">W</div>
+        <div class="tapsody-key" data-k="E">E</div>
+        <div class="tapsody-key" data-k="R">R</div>
+        <div class="tapsody-key" data-k="T">T</div>
+        <div class="tapsody-key" data-k="Y">Y</div>
+        <div class="tapsody-key" data-k="U">U</div>
+        <div class="tapsody-key" data-k="I">I</div>
+        <div class="tapsody-key" data-k="O">O</div>
+        <div class="tapsody-key" data-k="P">P</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="A">A</div>
+        <div class="tapsody-key" data-k="S">S</div>
+        <div class="tapsody-key" data-k="D">D</div>
+        <div class="tapsody-key" data-k="F">F</div>
+        <div class="tapsody-key" data-k="G">G</div>
+        <div class="tapsody-key" data-k="H">H</div>
+        <div class="tapsody-key" data-k="J">J</div>
+        <div class="tapsody-key" data-k="K">K</div>
+        <div class="tapsody-key" data-k="L">L</div>
+        <div class="tapsody-key wide-enter" data-k="ENTER">⏎ Enter</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key wide-space" data-k="SPACE">␣ Bar Ruang (Gema Badan Papan)</div>
+      </div>
+    </div>
+    <span class="demo-hint">💡 Klik kekunci di atas atau taip pada papan kekunci fizikal anda</span>
+  </div>
+  <p class="demo-note">Disintesis terus melalui Web Audio. Dalam aplikasi Mac, setiap ketukan bertindak balas serta-merta dari bar menu.</p>
+</div>
+<script>
+(function () {
+  var ctx = null, curSw = 'blue';
+  function initA() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); }
+  function snd(k) {
+    initA(); if (!ctx) return;
+    var t0 = ctx.currentTime, isSp = k === 'SPACE', isEnt = k === 'ENTER';
+    var f1 = 2800, f2 = 800, dec = 0.035, gVal = 0.25;
+    if (curSw === 'blue') { f1 = 3400; f2 = 1200; dec = 0.035; gVal = 0.3; }
+    else if (curSw === 'brown') { f1 = 1800; f2 = 650; dec = 0.05; gVal = 0.22; }
+    else if (curSw === 'red') { f1 = 1100; f2 = 450; dec = 0.06; gVal = 0.18; }
+    else if (curSw === 'thock') { f1 = 600; f2 = 240; dec = 0.09; gVal = 0.38; }
+    if (isSp) { f1 *= 0.6; f2 *= 0.5; dec *= 1.4; gVal *= 1.2; }
+    if (isEnt) { f1 *= 0.75; f2 *= 0.7; dec *= 1.2; }
+    var osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = curSw === 'thock' ? 'sine' : 'triangle';
+    osc.frequency.setValueAtTime(f1, t0);
+    osc.frequency.exponentialRampToValueAtTime(f2, t0 + dec);
+    g.gain.setValueAtTime(gVal, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + dec);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t0); osc.stop(t0 + dec);
+  }
+  document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); curSw = b.dataset.sw; snd('SPACE');
+    });
+  });
+  document.querySelectorAll('.tapsody-key').forEach(function(k) {
+    k.addEventListener('mousedown', function() {
+      k.classList.add('pressed'); snd(k.dataset.k);
+      setTimeout(function() { k.classList.remove('pressed'); }, 100);
+    });
+  });
+  window.addEventListener('keydown', function(e) {
+    var char = e.key.toUpperCase();
+    var el = document.querySelector('.tapsody-key[data-k="' + char + '"]') ||
+             (e.code === 'Space' && document.querySelector('.tapsody-key[data-k="SPACE"]')) ||
+             (e.code === 'Enter' && document.querySelector('.tapsody-key[data-k="ENTER"]'));
+    if (el) {
+      el.classList.add('pressed'); snd(el.dataset.k);
+      setTimeout(function() { el.classList.remove('pressed'); }, 100);
+    }
+  });
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="../img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -119,6 +208,48 @@
   <p class="note">Memerlukan macOS 14 Sonoma atau lebih baharu. Tersedia dalam 34 bahasa.</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>Aplikasi rakaman audio berbanding Tapsody</h2>
+  <p class="section-lead">Mengapa sintesis fizik matematik berasa seperti papan kekunci mekanikal sebenar di bawah jari anda.</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Ciri</th>
+          <th>Sampel Rakaman</th>
+          <th class="highlight-col">Tapsody</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Kependaman</strong></td>
+          <td>Kelewatan audio yang ketara semasa memainkan fail</td>
+          <td class="highlight-col"><strong>Tindak balas pantas 0 ms sebaik sahaja kekunci ditekan</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Ruang storan</strong></td>
+          <td>Ratusan megabait fail audio WAV yang berat</td>
+          <td class="highlight-col"><strong>Tiada fail audio: kod algoritma DSP yang sangat kecil</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Bunyi semula jadi</strong></td>
+          <td>Klik berulang monoton yang kedengaran seperti rakaman palsu</td>
+          <td class="highlight-col"><strong>Stereo mengikut posisi dan gema bar ruang yang kaya</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Redam pintar</strong></td>
+          <td>Bising berterusan semasa panggilan dan mesyuarat</td>
+          <td class="highlight-col"><strong>Bisu secara automatik dalam aplikasi yang dipilih</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Privasi</strong></td>
+          <td>Alat pihak ketiga dengan sambungan rangkaian yang meragukan</td>
+          <td class="highlight-col"><strong>Sifar akses rangkaian dan macOS melindungi medan kata laluan</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>Privasi dalam satu perenggan</h2>
   <p>Tapsody memerlukan kebenaran Pemantauan Input untuk mengetahui bila sesuatu kekunci ditekan dan naik semula. Ia membaca kod kekunci dan tiada yang lain. Tiada teks disimpan, tiada apa-apa dihantar ke mana-mana, tiada akaun dan tiada akses rangkaian, dan macOS sendiri menahan apa sahaja yang ditaip dalam medan kata laluan. <a href="privacy.html">Dasar privasi</a> penuh menyatakan perkara yang sama dengan lebih terperinci.</p>

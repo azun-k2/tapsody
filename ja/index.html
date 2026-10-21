@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ リアルタイム数理合成サウンド · 音声ファイル不使用</div>
   <img class="icon" src="../icon-512.png" width="120" height="120" alt="">
   <h1>Tapsody</h1>
   <p class="tagline">Mac にメカニカルキーボードの打鍵音を。メニューバーから。</p>
@@ -105,6 +106,94 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tapsody-stage" role="group" aria-label="インタラクティブデモ：タイピングして打鍵音を試聴">
+    <div class="tapsody-switches">
+      <button class="app-chip active" data-sw="blue">🔵 青軸 クリッキー</button>
+      <button class="app-chip" data-sw="brown">🟤 茶軸 タクタイル</button>
+      <button class="app-chip" data-sw="red">🔴 赤軸 リニア</button>
+      <button class="app-chip" data-sw="thock">🪵 コトコト重厚音</button>
+    </div>
+    <div class="tapsody-board">
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="Q">Q</div>
+        <div class="tapsody-key" data-k="W">W</div>
+        <div class="tapsody-key" data-k="E">E</div>
+        <div class="tapsody-key" data-k="R">R</div>
+        <div class="tapsody-key" data-k="T">T</div>
+        <div class="tapsody-key" data-k="Y">Y</div>
+        <div class="tapsody-key" data-k="U">U</div>
+        <div class="tapsody-key" data-k="I">I</div>
+        <div class="tapsody-key" data-k="O">O</div>
+        <div class="tapsody-key" data-k="P">P</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="A">A</div>
+        <div class="tapsody-key" data-k="S">S</div>
+        <div class="tapsody-key" data-k="D">D</div>
+        <div class="tapsody-key" data-k="F">F</div>
+        <div class="tapsody-key" data-k="G">G</div>
+        <div class="tapsody-key" data-k="H">H</div>
+        <div class="tapsody-key" data-k="J">J</div>
+        <div class="tapsody-key" data-k="K">K</div>
+        <div class="tapsody-key" data-k="L">L</div>
+        <div class="tapsody-key wide-enter" data-k="ENTER">⏎ Enter</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key wide-space" data-k="SPACE">␣ スペースバー (重厚な筐体共鳴)</div>
+      </div>
+    </div>
+    <span class="demo-hint">💡 上のキーをクリックするか、お手元のキーボードでタイピングしてください</span>
+  </div>
+  <p class="demo-note">Web Audioにより直接合成しています。Macアプリではメニューバーから毎打鍵瞬時に反応します。</p>
+</div>
+<script>
+(function () {
+  var ctx = null, curSw = 'blue';
+  function initA() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); }
+  function snd(k) {
+    initA(); if (!ctx) return;
+    var t0 = ctx.currentTime, isSp = k === 'SPACE', isEnt = k === 'ENTER';
+    var f1 = 2800, f2 = 800, dec = 0.035, gVal = 0.25;
+    if (curSw === 'blue') { f1 = 3400; f2 = 1200; dec = 0.035; gVal = 0.3; }
+    else if (curSw === 'brown') { f1 = 1800; f2 = 650; dec = 0.05; gVal = 0.22; }
+    else if (curSw === 'red') { f1 = 1100; f2 = 450; dec = 0.06; gVal = 0.18; }
+    else if (curSw === 'thock') { f1 = 600; f2 = 240; dec = 0.09; gVal = 0.38; }
+    if (isSp) { f1 *= 0.6; f2 *= 0.5; dec *= 1.4; gVal *= 1.2; }
+    if (isEnt) { f1 *= 0.75; f2 *= 0.7; dec *= 1.2; }
+    var osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = curSw === 'thock' ? 'sine' : 'triangle';
+    osc.frequency.setValueAtTime(f1, t0);
+    osc.frequency.exponentialRampToValueAtTime(f2, t0 + dec);
+    g.gain.setValueAtTime(gVal, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + dec);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t0); osc.stop(t0 + dec);
+  }
+  document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); curSw = b.dataset.sw; snd('SPACE');
+    });
+  });
+  document.querySelectorAll('.tapsody-key').forEach(function(k) {
+    k.addEventListener('mousedown', function() {
+      k.classList.add('pressed'); snd(k.dataset.k);
+      setTimeout(function() { k.classList.remove('pressed'); }, 100);
+    });
+  });
+  window.addEventListener('keydown', function(e) {
+    var char = e.key.toUpperCase();
+    var el = document.querySelector('.tapsody-key[data-k="' + char + '"]') ||
+             (e.code === 'Space' && document.querySelector('.tapsody-key[data-k="SPACE"]')) ||
+             (e.code === 'Enter' && document.querySelector('.tapsody-key[data-k="ENTER"]'));
+    if (el) {
+      el.classList.add('pressed'); snd(el.dataset.k);
+      setTimeout(function() { el.classList.remove('pressed'); }, 100);
+    }
+  });
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="../img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -119,6 +208,48 @@
   <p class="note">macOS 14 Sonoma 以降が必要です。34 言語に対応しています。</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>録音ファイル再生アプリとTapsodyの比較</h2>
+  <p class="section-lead">なぜ数理モデルによる物理合成が、本物のメカニカルキーボードの感触をもたらすのか。</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>項目</th>
+          <th>録音ファイル再生</th>
+          <th class="highlight-col">Tapsody</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>遅延</strong></td>
+          <td>バッファ読み込みによる不快な打鍵遅延</td>
+          <td class="highlight-col"><strong>キー押下と同時に0ミリ秒で即座に発音</strong></td>
+        </tr>
+        <tr>
+          <td><strong>容量</strong></td>
+          <td>数百メガバイトもの巨大なWAVファイル群</td>
+          <td class="highlight-col"><strong>音声ファイル不要：数理アルゴリズムのみで超軽量</strong></td>
+        </tr>
+        <tr>
+          <td><strong>音響再現</strong></td>
+          <td>同一ループの繰り返しで機械的かつ不自然</td>
+          <td class="highlight-col"><strong>左右ステレオ定位、打鍵位置やスペースバーの豊かな共鳴音</strong></td>
+        </tr>
+        <tr>
+          <td><strong>消音設定</strong></td>
+          <td>オンライン会議中も周囲に騒音が鳴り続ける</td>
+          <td class="highlight-col"><strong>指定アプリや通話中は自動でスマートに消音</strong></td>
+        </tr>
+        <tr>
+          <td><strong>プライバシー</strong></td>
+          <td>不透明な通信を行う外部キーロガーのリスク</td>
+          <td class="highlight-col"><strong>完全通信なし、macOSがパスワード入力を自動遮断</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>プライバシーをひとことで</h2>
   <p>Tapsody は、キーが押されて戻るタイミングを知るために「入力監視」の許可を必要とします。読み取るのはキーコードだけです。テキストは保存されず、どこにも何も送信されず、アカウントもネットワークアクセスもありません。パスワード欄への入力は macOS 自体がアプリに渡しません。詳しくは<a href="privacy.html">プライバシーポリシー</a>の全文をご覧ください。</p>

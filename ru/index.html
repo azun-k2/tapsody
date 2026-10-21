@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ Real-time mathematical click synthesis · Zero audio recordings</div>
   <img class="icon" src="../icon-512.png" width="120" height="120" alt="">
   <h1>Tapsody</h1>
   <p class="tagline">Звуки механической клавиатуры для вашего Mac, из строки меню.</p>
@@ -105,6 +106,94 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tapsody-stage" role="group" aria-label="Интерактивная демонстрация: нажимайте клавиши для прослушивания">
+    <div class="tapsody-switches">
+      <button class="app-chip active" data-sw="blue">🔵 Синие Кликающие</button>
+      <button class="app-chip" data-sw="brown">🟤 Коричневые Тактильные</button>
+      <button class="app-chip" data-sw="red">🔴 Красные Линейные</button>
+      <button class="app-chip" data-sw="thock">🪵 Глубокий Thock</button>
+    </div>
+    <div class="tapsody-board">
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="Q">Q</div>
+        <div class="tapsody-key" data-k="W">W</div>
+        <div class="tapsody-key" data-k="E">E</div>
+        <div class="tapsody-key" data-k="R">R</div>
+        <div class="tapsody-key" data-k="T">T</div>
+        <div class="tapsody-key" data-k="Y">Y</div>
+        <div class="tapsody-key" data-k="U">U</div>
+        <div class="tapsody-key" data-k="I">I</div>
+        <div class="tapsody-key" data-k="O">O</div>
+        <div class="tapsody-key" data-k="P">P</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="A">A</div>
+        <div class="tapsody-key" data-k="S">S</div>
+        <div class="tapsody-key" data-k="D">D</div>
+        <div class="tapsody-key" data-k="F">F</div>
+        <div class="tapsody-key" data-k="G">G</div>
+        <div class="tapsody-key" data-k="H">H</div>
+        <div class="tapsody-key" data-k="J">J</div>
+        <div class="tapsody-key" data-k="K">K</div>
+        <div class="tapsody-key" data-k="L">L</div>
+        <div class="tapsody-key wide-enter" data-k="ENTER">⏎ Enter</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key wide-space" data-k="SPACE">␣ Пробел (Глубокий резонанс корпуса)</div>
+      </div>
+    </div>
+    <span class="demo-hint">💡 Нажимайте клавиши выше или печатайте на своей клавиатуре</span>
+  </div>
+  <p class="demo-note">Звук синтезируется через Web Audio. В приложении для Mac каждое нажатие срабатывает мгновенно из строки меню.</p>
+</div>
+<script>
+(function () {
+  var ctx = null, curSw = 'blue';
+  function initA() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); }
+  function snd(k) {
+    initA(); if (!ctx) return;
+    var t0 = ctx.currentTime, isSp = k === 'SPACE', isEnt = k === 'ENTER';
+    var f1 = 2800, f2 = 800, dec = 0.035, gVal = 0.25;
+    if (curSw === 'blue') { f1 = 3400; f2 = 1200; dec = 0.035; gVal = 0.3; }
+    else if (curSw === 'brown') { f1 = 1800; f2 = 650; dec = 0.05; gVal = 0.22; }
+    else if (curSw === 'red') { f1 = 1100; f2 = 450; dec = 0.06; gVal = 0.18; }
+    else if (curSw === 'thock') { f1 = 600; f2 = 240; dec = 0.09; gVal = 0.38; }
+    if (isSp) { f1 *= 0.6; f2 *= 0.5; dec *= 1.4; gVal *= 1.2; }
+    if (isEnt) { f1 *= 0.75; f2 *= 0.7; dec *= 1.2; }
+    var osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = curSw === 'thock' ? 'sine' : 'triangle';
+    osc.frequency.setValueAtTime(f1, t0);
+    osc.frequency.exponentialRampToValueAtTime(f2, t0 + dec);
+    g.gain.setValueAtTime(gVal, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + dec);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t0); osc.stop(t0 + dec);
+  }
+  document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); curSw = b.dataset.sw; snd('SPACE');
+    });
+  });
+  document.querySelectorAll('.tapsody-key').forEach(function(k) {
+    k.addEventListener('mousedown', function() {
+      k.classList.add('pressed'); snd(k.dataset.k);
+      setTimeout(function() { k.classList.remove('pressed'); }, 100);
+    });
+  });
+  window.addEventListener('keydown', function(e) {
+    var char = e.key.toUpperCase();
+    var el = document.querySelector('.tapsody-key[data-k="' + char + '"]') ||
+             (e.code === 'Space' && document.querySelector('.tapsody-key[data-k="SPACE"]')) ||
+             (e.code === 'Enter' && document.querySelector('.tapsody-key[data-k="ENTER"]'));
+    if (el) {
+      el.classList.add('pressed'); snd(el.dataset.k);
+      setTimeout(function() { el.classList.remove('pressed'); }, 100);
+    }
+  });
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="../img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -119,6 +208,48 @@
   <p class="note">Требуется macOS 14 Sonoma или новее. Доступно на 34 языках.</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>Приложения с аудиозаписями в сравнении с Tapsody</h2>
+  <p class="section-lead">Почему математический физический синтез звучит как настоящая механическая клавиатура.</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Критерий</th>
+          <th>Аудиозаписи</th>
+          <th class="highlight-col">Tapsody</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Задержка</strong></td>
+          <td>Заметное запаздывание звука из-за загрузки файлов</td>
+          <td class="highlight-col"><strong>Мгновенный отклик 0 мс непосредственно при нажатии</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Размер</strong></td>
+          <td>Сотни мегабайт тяжелых аудиофайлов WAV</td>
+          <td class="highlight-col"><strong>Никаких аудиофайлов: крошечный физический алгоритм DSP</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Акустика</strong></td>
+          <td>Повторение одних и тех же звуков утомляет слух</td>
+          <td class="highlight-col"><strong>Стереопанорама, естественный ход и глубокий пробел</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Заглушение</strong></td>
+          <td>Мешает во время видеозвонков и встреч</td>
+          <td class="highlight-col"><strong>Автоматически затихает в выбранных приложениях</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Конфиденциальность</strong></td>
+          <td>Сторонние утилиты с сомнительными сетевыми подключениями</td>
+          <td class="highlight-col"><strong>Никакой сети, а macOS блокирует поля ввода паролей</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>Конфиденциальность в одном абзаце</h2>
   <p>Tapsody нужно разрешение «Мониторинг ввода», чтобы знать, когда клавиша нажата и отпущена. Приложение считывает код клавиши — и ничего больше. Текст не сохраняется, ничего никуда не отправляется, нет ни учётной записи, ни доступа к сети, а всё, что вводится в поле пароля, macOS сама скрывает от приложения. В полной <a href="privacy.html">политике конфиденциальности</a> сказано то же самое, только подробнее.</p>

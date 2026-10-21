@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ Real-time mathematical click synthesis · Zero audio recordings</div>
   <img class="icon" src="../icon-512.png" width="120" height="120" alt="">
   <h1>Tapsody</h1>
   <p class="tagline">Mac’in için mekanik klavye sesleri, menü çubuğundan.</p>
@@ -105,6 +106,94 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tapsody-stage" role="group" aria-label="Etkileşimli demo: mekanik tıklama seslerini duymak için yazın">
+    <div class="tapsody-switches">
+      <button class="app-chip active" data-sw="blue">🔵 Blue Klik</button>
+      <button class="app-chip" data-sw="brown">🟤 Brown Taktil</button>
+      <button class="app-chip" data-sw="red">🔴 Red Lineer</button>
+      <button class="app-chip" data-sw="thock">🪵 Derin Özel Thock</button>
+    </div>
+    <div class="tapsody-board">
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="Q">Q</div>
+        <div class="tapsody-key" data-k="W">W</div>
+        <div class="tapsody-key" data-k="E">E</div>
+        <div class="tapsody-key" data-k="R">R</div>
+        <div class="tapsody-key" data-k="T">T</div>
+        <div class="tapsody-key" data-k="Y">Y</div>
+        <div class="tapsody-key" data-k="U">U</div>
+        <div class="tapsody-key" data-k="I">I</div>
+        <div class="tapsody-key" data-k="O">O</div>
+        <div class="tapsody-key" data-k="P">P</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="A">A</div>
+        <div class="tapsody-key" data-k="S">S</div>
+        <div class="tapsody-key" data-k="D">D</div>
+        <div class="tapsody-key" data-k="F">F</div>
+        <div class="tapsody-key" data-k="G">G</div>
+        <div class="tapsody-key" data-k="H">H</div>
+        <div class="tapsody-key" data-k="J">J</div>
+        <div class="tapsody-key" data-k="K">K</div>
+        <div class="tapsody-key" data-k="L">L</div>
+        <div class="tapsody-key wide-enter" data-k="ENTER">⏎ Enter</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key wide-space" data-k="SPACE">␣ Boşluk Tuşu (Derin Kasa Rezonansı)</div>
+      </div>
+    </div>
+    <span class="demo-hint">💡 Yukarıdaki tuşlara tıklayın veya klavyenizde yazın</span>
+  </div>
+  <p class="demo-note">Web Audio ile doğrudan sentezlenir. Mac uygulamasında her tuş vuruşu menü çubuğundan anında tepki verir.</p>
+</div>
+<script>
+(function () {
+  var ctx = null, curSw = 'blue';
+  function initA() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); }
+  function snd(k) {
+    initA(); if (!ctx) return;
+    var t0 = ctx.currentTime, isSp = k === 'SPACE', isEnt = k === 'ENTER';
+    var f1 = 2800, f2 = 800, dec = 0.035, gVal = 0.25;
+    if (curSw === 'blue') { f1 = 3400; f2 = 1200; dec = 0.035; gVal = 0.3; }
+    else if (curSw === 'brown') { f1 = 1800; f2 = 650; dec = 0.05; gVal = 0.22; }
+    else if (curSw === 'red') { f1 = 1100; f2 = 450; dec = 0.06; gVal = 0.18; }
+    else if (curSw === 'thock') { f1 = 600; f2 = 240; dec = 0.09; gVal = 0.38; }
+    if (isSp) { f1 *= 0.6; f2 *= 0.5; dec *= 1.4; gVal *= 1.2; }
+    if (isEnt) { f1 *= 0.75; f2 *= 0.7; dec *= 1.2; }
+    var osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = curSw === 'thock' ? 'sine' : 'triangle';
+    osc.frequency.setValueAtTime(f1, t0);
+    osc.frequency.exponentialRampToValueAtTime(f2, t0 + dec);
+    g.gain.setValueAtTime(gVal, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + dec);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t0); osc.stop(t0 + dec);
+  }
+  document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); curSw = b.dataset.sw; snd('SPACE');
+    });
+  });
+  document.querySelectorAll('.tapsody-key').forEach(function(k) {
+    k.addEventListener('mousedown', function() {
+      k.classList.add('pressed'); snd(k.dataset.k);
+      setTimeout(function() { k.classList.remove('pressed'); }, 100);
+    });
+  });
+  window.addEventListener('keydown', function(e) {
+    var char = e.key.toUpperCase();
+    var el = document.querySelector('.tapsody-key[data-k="' + char + '"]') ||
+             (e.code === 'Space' && document.querySelector('.tapsody-key[data-k="SPACE"]')) ||
+             (e.code === 'Enter' && document.querySelector('.tapsody-key[data-k="ENTER"]'));
+    if (el) {
+      el.classList.add('pressed'); snd(el.dataset.k);
+      setTimeout(function() { el.classList.remove('pressed'); }, 100);
+    }
+  });
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="../img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -119,6 +208,48 @@
   <p class="note">macOS 14 Sonoma veya sonrası gerekir. 34 dilde kullanılabilir.</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>Ses kaydı oynatan uygulamalar ile Tapsody karşılaştırması</h2>
+  <p class="section-lead">Matematiksel fiziksel sentezin parmaklarınızın altında neden gerçek bir mekanik klavye hissi verdiği.</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Özellik</th>
+          <th>Ses Kayıtları</th>
+          <th class="highlight-col">Tapsody</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Gecikme</strong></td>
+          <td>Ses dosyalarını yüklerken fark edilir tıklama gecikmesi</td>
+          <td class="highlight-col"><strong>Tuşa basıldığı anda 0 ms anlık tepki</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Depolama</strong></td>
+          <td>Yüzlerce megabaytlık ağır WAV ses dosyaları</td>
+          <td class="highlight-col"><strong>Sıfır ses dosyası: tüy kadar hafif matematiksel DSP kodu</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Akustik</strong></td>
+          <td>Yapay bir döngü gibi hissettiren tekdüze sesler</td>
+          <td class="highlight-col"><strong>Doğal stereo dağılımı ve boşluk tuşunun derin gövde tınısı</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Sessiz mod</strong></td>
+          <td>Aramalarda ve toplantılarda gürültü yapmaya devam eder</td>
+          <td class="highlight-col"><strong>Seçilen uygulamalarda ve aramalarda otomatik olarak susar</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Gizlilik</strong></td>
+          <td>Şüpheli ağ bağlantılarına sahip üçüncü taraf araçlar</td>
+          <td class="highlight-col"><strong>Sıfır ağ erişimi ve macOS şifre alanlarını korur</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>Tek paragrafta gizlilik</h2>
   <p>Tapsody’nin bir tuşun ne zaman inip yeniden kalktığını bilmesi için Girdi İzleme iznine ihtiyacı var. Tuş kodunu okur, başka hiçbir şeyi değil. Hiçbir metin saklanmaz, hiçbir şey bir yere gönderilmez, hesap ve ağ erişimi yoktur; parola alanına yazılan her şeyi de macOS’in kendisi uygulamadan saklar. Tam <a href="privacy.html">gizlilik politikası</a> aynı şeyi daha ayrıntılı anlatır.</p>

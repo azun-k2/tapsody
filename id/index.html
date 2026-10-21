@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ Real-time mathematical click synthesis · Zero audio recordings</div>
   <img class="icon" src="../icon-512.png" width="120" height="120" alt="">
   <h1>Tapsody</h1>
   <p class="tagline">Suara keyboard mekanis untuk Mac Anda, dari bar menu.</p>
@@ -105,6 +106,94 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tapsody-stage" role="group" aria-label="Demo interaktif: ketik pada keyboard untuk mendengar suara">
+    <div class="tapsody-switches">
+      <button class="app-chip active" data-sw="blue">🔵 Blue Clicky</button>
+      <button class="app-chip" data-sw="brown">🟤 Brown Taktil</button>
+      <button class="app-chip" data-sw="red">🔴 Red Linear</button>
+      <button class="app-chip" data-sw="thock">🪵 Custom Thock Dalam</button>
+    </div>
+    <div class="tapsody-board">
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="Q">Q</div>
+        <div class="tapsody-key" data-k="W">W</div>
+        <div class="tapsody-key" data-k="E">E</div>
+        <div class="tapsody-key" data-k="R">R</div>
+        <div class="tapsody-key" data-k="T">T</div>
+        <div class="tapsody-key" data-k="Y">Y</div>
+        <div class="tapsody-key" data-k="U">U</div>
+        <div class="tapsody-key" data-k="I">I</div>
+        <div class="tapsody-key" data-k="O">O</div>
+        <div class="tapsody-key" data-k="P">P</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="A">A</div>
+        <div class="tapsody-key" data-k="S">S</div>
+        <div class="tapsody-key" data-k="D">D</div>
+        <div class="tapsody-key" data-k="F">F</div>
+        <div class="tapsody-key" data-k="G">G</div>
+        <div class="tapsody-key" data-k="H">H</div>
+        <div class="tapsody-key" data-k="J">J</div>
+        <div class="tapsody-key" data-k="K">K</div>
+        <div class="tapsody-key" data-k="L">L</div>
+        <div class="tapsody-key wide-enter" data-k="ENTER">⏎ Enter</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key wide-space" data-k="SPACE">␣ Spasi (Resonansi Bodi Dalam)</div>
+      </div>
+    </div>
+    <span class="demo-hint">💡 Klik tombol di atas atau ketik di keyboard fisik Anda</span>
+  </div>
+  <p class="demo-note">Disintesis langsung melalui Web Audio di perangkat Anda. Di aplikasi Mac, setiap ketukan merespons seketika dari menu bar.</p>
+</div>
+<script>
+(function () {
+  var ctx = null, curSw = 'blue';
+  function initA() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); }
+  function snd(k) {
+    initA(); if (!ctx) return;
+    var t0 = ctx.currentTime, isSp = k === 'SPACE', isEnt = k === 'ENTER';
+    var f1 = 2800, f2 = 800, dec = 0.035, gVal = 0.25;
+    if (curSw === 'blue') { f1 = 3400; f2 = 1200; dec = 0.035; gVal = 0.3; }
+    else if (curSw === 'brown') { f1 = 1800; f2 = 650; dec = 0.05; gVal = 0.22; }
+    else if (curSw === 'red') { f1 = 1100; f2 = 450; dec = 0.06; gVal = 0.18; }
+    else if (curSw === 'thock') { f1 = 600; f2 = 240; dec = 0.09; gVal = 0.38; }
+    if (isSp) { f1 *= 0.6; f2 *= 0.5; dec *= 1.4; gVal *= 1.2; }
+    if (isEnt) { f1 *= 0.75; f2 *= 0.7; dec *= 1.2; }
+    var osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = curSw === 'thock' ? 'sine' : 'triangle';
+    osc.frequency.setValueAtTime(f1, t0);
+    osc.frequency.exponentialRampToValueAtTime(f2, t0 + dec);
+    g.gain.setValueAtTime(gVal, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + dec);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t0); osc.stop(t0 + dec);
+  }
+  document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); curSw = b.dataset.sw; snd('SPACE');
+    });
+  });
+  document.querySelectorAll('.tapsody-key').forEach(function(k) {
+    k.addEventListener('mousedown', function() {
+      k.classList.add('pressed'); snd(k.dataset.k);
+      setTimeout(function() { k.classList.remove('pressed'); }, 100);
+    });
+  });
+  window.addEventListener('keydown', function(e) {
+    var char = e.key.toUpperCase();
+    var el = document.querySelector('.tapsody-key[data-k="' + char + '"]') ||
+             (e.code === 'Space' && document.querySelector('.tapsody-key[data-k="SPACE"]')) ||
+             (e.code === 'Enter' && document.querySelector('.tapsody-key[data-k="ENTER"]'));
+    if (el) {
+      el.classList.add('pressed'); snd(el.dataset.k);
+      setTimeout(function() { el.classList.remove('pressed'); }, 100);
+    }
+  });
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="../img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -119,6 +208,48 @@
   <p class="note">Memerlukan macOS 14 Sonoma atau lebih baru. Tersedia dalam 34 bahasa.</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>Aplikasi rekaman suara vs Tapsody</h2>
+  <p class="section-lead">Mengapa sintesis fisik matematis terasa seperti keyboard mekanik asli di ujung jari Anda.</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Aspek</th>
+          <th>Sampel Rekaman</th>
+          <th class="highlight-col">Tapsody</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Latensi</strong></td>
+          <td>Jeda audio yang terasa karena memuat file rekaman</td>
+          <td class="highlight-col"><strong>Respons instan 0 ms langsung saat tombol ditekan</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Ukuran</strong></td>
+          <td>Ratusan megabita file rekaman audio WAV yang berat</td>
+          <td class="highlight-col"><strong>Tanpa file audio: algoritma DSP yang sangat ringan</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Kenyamanan</strong></td>
+          <td>Klik berulang monoton yang terdengar seperti rekaman kaku</td>
+          <td class="highlight-col"><strong>Pemisahan stereo alami dan resonansi tombol spasi yang dalam</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Peredam suara</strong></td>
+          <td>Terus berbunyi bising saat rapat daring dan panggilan</td>
+          <td class="highlight-col"><strong>Otomatis hening di aplikasi yang ditentukan</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Privasi</strong></td>
+          <td>Alat pihak ketiga dengan koneksi jaringan yang meragukan</td>
+          <td class="highlight-col"><strong>Nol akses jaringan dan macOS menahan input kata sandi</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>Privasi dalam satu paragraf</h2>
   <p>Tapsody memerlukan izin Pemantauan Input untuk mengetahui kapan sebuah tombol turun dan naik kembali. App ini membaca kode tombol dan tidak ada yang lain. Tidak ada teks yang disimpan, tidak ada yang dikirim ke mana pun, tidak ada akun dan tidak ada akses jaringan, dan macOS sendiri menahan apa pun yang diketik di kolom kata sandi. <a href="privacy.html">Kebijakan privasi</a> lengkapnya menyampaikan hal yang sama dengan lebih rinci.</p>

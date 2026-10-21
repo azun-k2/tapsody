@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ Real-time mathematical click synthesis · Zero audio recordings</div>
   <img class="icon" src="../icon-512.png" width="120" height="120" alt="">
   <h1>Tapsody</h1>
   <p class="tagline">เสียงคีย์บอร์ดแมคคานิคอลสำหรับ Mac ของคุณ จากแถบเมนู</p>
@@ -105,6 +106,94 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tapsody-stage" role="group" aria-label="การสาธิตแบบอินเทอร์แอคทีฟ: พิมพ์บนแป้นพิมพ์เพื่อฟังเสียง">
+    <div class="tapsody-switches">
+      <button class="app-chip active" data-sw="blue">🔵 สวิตช์ Blue เสียงคลิกใส</button>
+      <button class="app-chip" data-sw="brown">🟤 สวิตช์ Brown สองจังหวะ</button>
+      <button class="app-chip" data-sw="red">🔴 สวิตช์ Red ลื่นเงียบ</button>
+      <button class="app-chip" data-sw="thock">🪵 เสียง Thock แน่นทุ้ม</button>
+    </div>
+    <div class="tapsody-board">
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="Q">Q</div>
+        <div class="tapsody-key" data-k="W">W</div>
+        <div class="tapsody-key" data-k="E">E</div>
+        <div class="tapsody-key" data-k="R">R</div>
+        <div class="tapsody-key" data-k="T">T</div>
+        <div class="tapsody-key" data-k="Y">Y</div>
+        <div class="tapsody-key" data-k="U">U</div>
+        <div class="tapsody-key" data-k="I">I</div>
+        <div class="tapsody-key" data-k="O">O</div>
+        <div class="tapsody-key" data-k="P">P</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key" data-k="A">A</div>
+        <div class="tapsody-key" data-k="S">S</div>
+        <div class="tapsody-key" data-k="D">D</div>
+        <div class="tapsody-key" data-k="F">F</div>
+        <div class="tapsody-key" data-k="G">G</div>
+        <div class="tapsody-key" data-k="H">H</div>
+        <div class="tapsody-key" data-k="J">J</div>
+        <div class="tapsody-key" data-k="K">K</div>
+        <div class="tapsody-key" data-k="L">L</div>
+        <div class="tapsody-key wide-enter" data-k="ENTER">⏎ Enter</div>
+      </div>
+      <div class="tapsody-row">
+        <div class="tapsody-key wide-space" data-k="SPACE">␣ สเปซบาร์ (เสียงก้องทุ้มลึก)</div>
+      </div>
+    </div>
+    <span class="demo-hint">💡 คลิกปุ่มด้านบนหรือพิมพ์บนแป้นพิมพ์คอมพิวเตอร์ของคุณ</span>
+  </div>
+  <p class="demo-note">สังเคราะห์เสียงโดยตรงผ่าน Web Audio ในแอป Mac แต่ละปุ่มตอบสนองทันทีจากแถบเมนู</p>
+</div>
+<script>
+(function () {
+  var ctx = null, curSw = 'blue';
+  function initA() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); }
+  function snd(k) {
+    initA(); if (!ctx) return;
+    var t0 = ctx.currentTime, isSp = k === 'SPACE', isEnt = k === 'ENTER';
+    var f1 = 2800, f2 = 800, dec = 0.035, gVal = 0.25;
+    if (curSw === 'blue') { f1 = 3400; f2 = 1200; dec = 0.035; gVal = 0.3; }
+    else if (curSw === 'brown') { f1 = 1800; f2 = 650; dec = 0.05; gVal = 0.22; }
+    else if (curSw === 'red') { f1 = 1100; f2 = 450; dec = 0.06; gVal = 0.18; }
+    else if (curSw === 'thock') { f1 = 600; f2 = 240; dec = 0.09; gVal = 0.38; }
+    if (isSp) { f1 *= 0.6; f2 *= 0.5; dec *= 1.4; gVal *= 1.2; }
+    if (isEnt) { f1 *= 0.75; f2 *= 0.7; dec *= 1.2; }
+    var osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = curSw === 'thock' ? 'sine' : 'triangle';
+    osc.frequency.setValueAtTime(f1, t0);
+    osc.frequency.exponentialRampToValueAtTime(f2, t0 + dec);
+    g.gain.setValueAtTime(gVal, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + dec);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t0); osc.stop(t0 + dec);
+  }
+  document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tapsody-switches .app-chip').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); curSw = b.dataset.sw; snd('SPACE');
+    });
+  });
+  document.querySelectorAll('.tapsody-key').forEach(function(k) {
+    k.addEventListener('mousedown', function() {
+      k.classList.add('pressed'); snd(k.dataset.k);
+      setTimeout(function() { k.classList.remove('pressed'); }, 100);
+    });
+  });
+  window.addEventListener('keydown', function(e) {
+    var char = e.key.toUpperCase();
+    var el = document.querySelector('.tapsody-key[data-k="' + char + '"]') ||
+             (e.code === 'Space' && document.querySelector('.tapsody-key[data-k="SPACE"]')) ||
+             (e.code === 'Enter' && document.querySelector('.tapsody-key[data-k="ENTER"]'));
+    if (el) {
+      el.classList.add('pressed'); snd(el.dataset.k);
+      setTimeout(function() { el.classList.remove('pressed'); }, 100);
+    }
+  });
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="../img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -119,6 +208,48 @@
   <p class="note">ต้องใช้ macOS 14 Sonoma ขึ้นไป รองรับ 34 ภาษา</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>แอปเล่นไฟล์เสียงบันทึกเทียบกับ Tapsody</h2>
+  <p class="section-lead">เหตุใดการสังเคราะห์เสียงเชิงฟิสิกส์จึงให้ความรู้สึกเหมือนพิมพ์คีย์บอร์ดจริงอย่างเป็นธรรมชาติ</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>คุณสมบัติ</th>
+          <th>ไฟล์เสียงบันทึก</th>
+          <th class="highlight-col">Tapsody</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>ความล่าช้า</strong></td>
+          <td>เสียงคลิกหน่วงช้าเนื่องจากการโหลดไฟล์</td>
+          <td class="highlight-col"><strong>ตอบสนองทันที 0 ms ในเสี้ยววินาทีที่กดแป้น</strong></td>
+        </tr>
+        <tr>
+          <td><strong>ขนาดพื้นที่</strong></td>
+          <td>กินพื้นที่หลายร้อยเมกะไบต์จากไฟล์เสียง WAV</td>
+          <td class="highlight-col"><strong>ไม่มีไฟล์เสียงแม้แต่ไฟล์เดียว: รหัส DSP เล็กมาก</strong></td>
+        </tr>
+        <tr>
+          <td><strong>ความเป็นธรรมชาติ</strong></td>
+          <td>เสียงซ้ำซากเดิมๆ ที่ฟังดูไม่เป็นธรรมชาติ</td>
+          <td class="highlight-col"><strong>มิติเสียงสเตอริโอซ้ายขวาและเสียงสเปซบาร์ก้องกังวาน</strong></td>
+        </tr>
+        <tr>
+          <td><strong>ปิดเสียงอัจฉริยะ</strong></td>
+          <td>ส่งเสียงดังรบกวนระหว่างประชุมออนไลน์</td>
+          <td class="highlight-col"><strong>ปิดเสียงอัตโนมัติในแอปที่เลือกและขณะโทร</strong></td>
+        </tr>
+        <tr>
+          <td><strong>ความเป็นส่วนตัว</strong></td>
+          <td>เครื่องมือภายนอกที่มีการเชื่อมต่ออินเทอร์เน็ตไม่โปร่งใส</td>
+          <td class="highlight-col"><strong>ไม่เชื่อมต่อเน็ตและ macOS ป้องกันการเข้าถึงรหัสผ่าน</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>ความเป็นส่วนตัวในย่อหน้าเดียว</h2>
   <p>Tapsody ต้องได้รับสิทธิ์การตรวจสอบอินพุตเพื่อรู้ว่าแป้นถูกกดลงและเด้งกลับขึ้นเมื่อใด แอปอ่านเพียงรหัสแป้นเท่านั้น ไม่มีการเก็บข้อความใดๆ ไม่มีการส่งสิ่งใดไปที่ไหน ไม่มีบัญชีและไม่มีการเข้าถึงเครือข่าย และ macOS เองก็กันทุกสิ่งที่พิมพ์ลงในช่องรหัสผ่านไว้ <a href="privacy.html">นโยบายความเป็นส่วนตัว</a>ฉบับเต็มอธิบายเรื่องเดียวกันนี้อย่างละเอียดกว่า</p>
